@@ -113,7 +113,7 @@ def preprocess_image(image):
     bkg_level = gray[int(img_h / 100)][int(img_w / 2)]
     thresh_level = bkg_level + BKG_THRESH
 
-    _, thresh = cv2.threshold(blur, thresh_level, 255, cv2.THRESH_BINARY_INV)
+    _, thresh = cv2.threshold(blur, thresh_level, 255, cv2.THRESH_BINARY)
 
     # Close to fill small holes
     kernel = np.ones((3, 3), np.uint8)
@@ -157,7 +157,8 @@ def preprocess_card(contour, image):
     """
     Uses contour to find a flattened 200x300 image of the card,
     plus rank and suit images.
-    Adds a morphological close on the corner image to reduce noise.
+    Then we threshold using THRESH_BINARY, then invert with bitwise_not()
+    so the rank/suit is white on black or black on white, as needed.
     """
     qCard = Query_card()
     qCard.contour = contour
@@ -189,7 +190,11 @@ def preprocess_card(contour, image):
     if thresh_level < 1:
         thresh_level = 1
 
-    _, query_thresh = cv2.threshold(Qcorner_zoom, thresh_level, 255, cv2.THRESH_BINARY_INV)
+    # We use THRESH_BINARY, then invert manually
+    _, query_thresh = cv2.threshold(Qcorner_zoom, thresh_level, 255, cv2.THRESH_BINARY)
+
+    # Manually invert the image instead of using THRESH_BINARY_INV
+    query_thresh = cv2.bitwise_not(query_thresh)
 
     # Morphological close to fill in small holes or noise in corner image
     kernel = np.ones((3,3), np.uint8)
